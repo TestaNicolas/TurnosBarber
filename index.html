@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reserva de Turnos</title>
+  <link rel="stylesheet" href="s">
+</head>
+<body>
+  <h1>Reserva de Turnos</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Lunes</th>
+        <th>Martes</th>
+        <th>Miércoles</th>
+        <th>Jueves</th>
+        <th>Viernes</th>
+        <th>Sábado</th>
+        <th>Domingo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Generar las filas de horarios -->
+      <script>
+        var horarios = [
+          '10:00',
+          '11:00',
+          '12:00',
+          '13:00',
+          '14:00',
+          '15:00',
+          '16:00',
+          '17:00',
+          '18:00',
+          '19:00'
+        ];
+
+        var diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        var fechaHoy = new Date();
+        var diaActual = diasSemana[fechaHoy.getDay()];
+
+        // Obtener los turnos reservados del almacenamiento local
+        var turnosReservados = JSON.parse(localStorage.getItem('turnosReservados')) || {};
+
+        for (var i = 0; i < horarios.length; i++) {
+          var horario = horarios[i];
+          var row = document.createElement('tr');
+          var th = document.createElement('th');
+          th.textContent = horario;
+          row.appendChild(th);
+
+          for (var j = 1; j <= 7; j++) {
+            var dia = obtenerDiaSemana(j);
+            var td = document.createElement('td');
+            td.id = horario + '-' + dia;
+
+            // Verificar si el turno está reservado
+            if (turnosReservados.hasOwnProperty(horario) && turnosReservados[horario].hasOwnProperty(dia)) {
+              td.classList.add('reserved');
+              td.textContent = turnosReservados[horario][dia];
+              td.addEventListener('click', function(hora, dia) {
+                return function() {
+                  cancelarTurno(hora, dia);
+                };
+              }(horario, dia));
+            } else if (dia === diaActual || j < fechaHoy.getDay()) {
+              td.classList.add('reserved');
+              td.textContent = '-';
+            } else {
+              td.textContent = 'Disponible';
+              td.addEventListener('click', function(hora, dia) {
+                return function() {
+                  reservarTurno(hora, dia);
+                };
+              }(horario, dia));
+            }
+            row.appendChild(td);
+          }
+
+          document.querySelector('tbody').appendChild(row);
+        }
+
+        function obtenerDiaSemana(numeroDia) {
+          return diasSemana[numeroDia];
+        }
+
+        function reservarTurno(hora, dia) {
+          var celda = document.getElementById(hora + '-' + dia);
+          if (celda.classList.contains('reserved')) {
+            alert('Este turno ya ha sido reservado');
+          } else {
+            var nombre = prompt('Ingrese su nombre:');
+            if (nombre) {
+              celda.classList.add('reserved');
+              celda.textContent = nombre;
+              // Guardar el turno reservado en el almacenamiento local
+              if (!turnosReservados.hasOwnProperty(hora)) {
+                turnosReservados[hora] = {};
+              }
+              turnosReservados[hora][dia] = nombre;
+              localStorage.setItem('turnosReservados', JSON.stringify(turnosReservados));
+            }
+          }
+        }
+
+        function cancelarTurno(hora, dia) {
+          var celda = document.getElementById(hora + '-' + dia);
+          if (celda.classList.contains('reserved')) {
+            var nombre = celda.textContent;
+            if (confirm('¿Está seguro que desea cancelar el turno reservado por ' + nombre + '?')) {
+              celda.classList.remove('reserved');
+              celda.textContent = 'Disponible';
+              // Eliminar el turno reservado del almacenamiento local
+              if (turnosReservados.hasOwnProperty(hora) && turnosReservados[hora].hasOwnProperty(dia)) {
+                delete turnosReservados[hora][dia];
+                localStorage.setItem('turnosReservados', JSON.stringify(turnosReservados));
+              }
+            }
+          }
+        }
+      </script>
+    </tbody>
+  </table>
+</body>
+</html>
+
